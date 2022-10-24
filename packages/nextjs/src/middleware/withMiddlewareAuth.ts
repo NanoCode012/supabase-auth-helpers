@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
-import { NextMiddleware } from 'next/server';
 import {
   CookieOptions,
-  setCookies,
   COOKIE_OPTIONS,
-  TOKEN_REFRESH_MARGIN,
+  jwtDecoder,
   NextRequestMiddlewareAdapter,
   NextResponseMiddlewareAdapter,
-  jwtDecoder,
+  setCookies,
+  TOKEN_REFRESH_MARGIN,
   User
 } from '@supabase/auth-helpers-shared';
+import { NextMiddleware, NextRequest, NextResponse } from 'next/server';
 
 class NoPermissionError extends Error {
   constructor(message: string) {
@@ -32,7 +31,7 @@ export interface withMiddlewareAuthOptions {
   cookieOptions?: CookieOptions;
   tokenRefreshMargin?: number;
   authGuard?: {
-    isPermitted: (user: User) => Promise<boolean>;
+    isPermitted: (user: User, req: NextRequest) => Promise<boolean>;
     redirectTo: string;
   };
 }
@@ -137,7 +136,7 @@ export const withMiddlewareAuth: withMiddlewareAuth =
         throw new Error('No auth user, redirecting');
       } else if (
         options.authGuard &&
-        !(await options.authGuard.isPermitted(authResult.user))
+        !(await options.authGuard.isPermitted(authResult.user, req))
       ) {
         throw new NoPermissionError('User is not permitted, redirecting');
       }
